@@ -8,11 +8,13 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from .forker import CounterfactualForker, ForkOverride
-from .mcp_server import MCPServer
-from .models import verify_trace_chain
-from .recorder import TraceStore, create_demo_trace
-from .replayer import TraceReplayer
+from .core.forker import CounterfactualForker, ForkOverride
+from .core.models import verify_trace_chain
+from .core.recorder import TraceStore, create_demo_trace
+from .core.replayer import TraceReplayer
+from .serve.mcp_server import MCPServer
+from .tools.bench_matrix import main as matrix_main
+from .tools.doctor import main as doctor_main
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -58,6 +60,17 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # mcp
     sub.add_parser("mcp", help="Start the native JSON-RPC 2.0 stdio MCP server.")
+
+    # doctor
+    p_doc = sub.add_parser("doctor", help="Run local diagnostics and SHA-256 trajectory self-tests.")
+    p_doc.add_argument("--store-dir", default=".", help="Directory to check disk headroom.")
+    p_doc.add_argument("--json", action="store_true", dest="as_json", help="Emit JSON output.")
+
+    # matrix
+    p_mat = sub.add_parser("matrix", help="Run multi-scale trajectory replay & fork benchmark matrix.")
+    p_mat.add_argument("--steps", nargs="+", type=int, default=[10, 50, 100, 500])
+    p_mat.add_argument("--reps", type=int, default=3)
+    p_mat.add_argument("--json", action="store_true", dest="as_json", help="Emit JSON output.")
 
     return parser
 
@@ -153,6 +166,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "mcp":
         MCPServer().serve_stdio()
         return 0
+
+    if args.command == "doctor":
+        doc_argv = ["--store-dir", args.store_dir]
+        if args.as_json:
+            doc_argv.append("--json")
+        return doctor_main(doc_argv)
+
+    if args.command == "matrix":
+        mat_argv = ["--steps", *[str(s) for s in args.steps], "--reps", str(args.reps)]
+        if args.as_json:
+            mat_argv.append("--json")
+        return matrix_main(mat_argv)
 
     return 1
 

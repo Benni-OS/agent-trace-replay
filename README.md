@@ -4,7 +4,7 @@
 
 <br/>
 
-[![Tests](https://img.shields.io/badge/Tests-15%20Passed-00C853?style=for-the-badge&logo=pytest&logoColor=white)](#-quickstart)
+[![Tests](https://img.shields.io/badge/Tests-19%20Passed-00C853?style=for-the-badge&logo=pytest&logoColor=white)](#-quickstart)
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-00B4D8?style=for-the-badge&logo=python&logoColor=white)](pyproject.toml)
 [![MCP](https://img.shields.io/badge/MCP-JSON--RPC%202.0-8a2be2?style=for-the-badge)](https://modelcontextprotocol.io/)
 [![Replay Cost](https://img.shields.io/badge/Replay%20Burn-%240.00%20Offline-00C853?style=for-the-badge)](#-architectural-benchmark-cloud-observability-vs-agent-trace-replay)
@@ -49,28 +49,38 @@ When an autonomous agent fails at step 14 of a 20-step MCP workflow, re-running 
 
 ---
 
-## 🧱 Architecture
+## 🏗️ Architecture
 
 ```text
-  [Agent / MCP Run]
+  AI Agents / MCP Clients / CI Replay Gates
          │
-         ▼
-  TraceRecorder ──► SHA-256 Chained Events (seed, LLM, MCP tool, state_snapshot)
-         │
-         ├──► TraceStore (Local JSONL / SQLite)
-         │
-         ├──► TraceReplayer ──► Offline $0.00 Replay + Schema/Drift Detection + Time-Travel
-         │
-         └──► CounterfactualForker ──► Branch at Step N ──► Structural, Token & Latency Diff
-                                                                      │
-                                                                      ▼
-                                                           MCPServer (JSON-RPC 2.0 stdio)
+         ├──► CLI   trace-replay record-demo | inspect | replay | fork | diff | doctor | matrix
+         └──► STDIO JSON-RPC 2.0 (trace-replay mcp)
+                       │
+                       ▼
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                       agent-trace-replay (ATR)                      │
+  │                                                                     │
+  │  ┌───────────────────┐  ┌───────────────────┐  ┌─────────────────┐  │
+  │  │ TraceRecorder     │  │  TraceReplayer    │  │ Counterfactual  │  │
+  │  │ • Seed & Clock    │─►│  • $0.00 Offline  │─►│ Forker          │  │
+  │  │ • SHA-256 Chain   │  │  • Drift Detector │  │ • Branch Step N │  │
+  │  │ • State Snapshots │  │  • Time-Travel    │  │ • TrajectoryDiff│  │
+  │  └───────────────────┘  └───────────────────┘  └─────────────────┘  │
+  │                                                                     │
+  │  ┌───────────────────┐  ┌───────────────────┐  ┌─────────────────┐  │
+  │  │ TraceStore        │  │  Serve & MCP      │  │  Tools & Doctor │  │
+  │  │ • Local JSONL     │  │  • JSON-RPC 2.0   │  │  • Self-Test    │  │
+  │  │ • Local SQLite3   │  │  • Telemetry P99  │  │  • Bench Matrix │  │
+  │  └───────────────────┘  └───────────────────┘  └─────────────────┘  │
+  └─────────────────────────────────────────────────────────────────────┘
+         │                                         │
+         ▼                                         ▼
+   Local Zero-Cloud Ledger                 Deterministic Replay & Diff
+   (.jsonl / .sqlite + SHA-256)            ($0.00 LLM Burn / < 1ms Diff)
 ```
 
-- `recorder.py`: Captures `seed_init`, `llm_call`, `tool_call`, and `state_snapshot` spans with deterministic RNG/timestamps and chains every event with `SHA-256(canonical_json + prev_hash)` into local **JSONL** or **SQLite**.
-- `replayer.py`: Replays recorded trajectories offline with `$0.00` token burn against recorded tapes or custom tool/LLM stubs, flags schema/output drift, verifies the SHA-256 chain, and supports step-by-step time-travel (`inspect_step`, `step_through`).
-- `forker.py`: Forks any trajectory at step `N` with modified tool outputs, prompt variants, or downstream simulators, reseals the new SHA-256 chain, and computes a `TrajectoryDiff` (identical, modified, diverged, added/removed steps, token & latency deltas).
-- `mcp_server.py`: Native zero-dependency JSON-RPC 2.0 stdio MCP server exposing `trace_inspect`, `trace_replay`, `trace_fork`, and `trace_diff`.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full layer specification.
 
 ---
 
@@ -133,6 +143,47 @@ Exposed MCP tools:
 - `trace_replay` — Deterministic offline replay with `$0.00` token burn and drift detection.
 - `trace_fork` — Counterfactual branch from step `fork_seq` with modified tool output or prompt variant.
 - `trace_diff` — Structural, token, and latency diff between base and forked trajectories.
+
+---
+
+## 📁 Project Structure
+
+```text
+agent-trace-replay/
+├── src/
+│   └── agent_trace_replay/
+│       ├── __init__.py                   # Backwards-compatible public exports
+│       ├── cli.py                        # CLI entrypoint (record-demo, inspect, replay, fork, diff, mcp, doctor, matrix)
+│       ├── core/
+│       │   ├── __init__.py               # Core package exports
+│       │   ├── models.py                 # TraceEvent, EventType, GENESIS_HASH & SHA-256 chain verifier
+│       │   ├── recorder.py               # TraceRecorder & TraceStore (JSONL / SQLite3)
+│       │   ├── replayer.py               # TraceReplayer ($0.00 offline replay, drift & time-travel)
+│       │   └── forker.py                 # CounterfactualForker & TrajectoryDiff engine
+│       ├── serve/
+│       │   ├── __init__.py               # Serve package exports
+│       │   ├── mcp_server.py             # Zero-dependency JSON-RPC 2.0 stdio MCP server
+│       │   ├── telemetry.py              # Replay/fork P50/P90/P99 latency & token-savings telemetry
+│       │   └── health_monitor.py         # Disk headroom, SQLite3 & SHA-256 chain health monitor
+│       └── tools/
+│           ├── __init__.py               # Tools package exports
+│           ├── doctor.py                 # Runtime diagnostics & end-to-end pipeline self-test
+│           └── bench_matrix.py           # Multi-scale trajectory replay & fork benchmark matrix
+├── examples/
+│   ├── quickstart_time_travel.py         # Record, time-travel inspect & offline replay quickstart
+│   └── counterfactual_fork_demo.py       # Branch at step N & compute TrajectoryDiff
+├── scripts/
+│   ├── benchmark_replay_throughput.py    # 10–500 step replay & fork throughput benchmark
+│   └── gate_trace_integrity.py           # Release integrity gate runner
+├── docs/
+│   └── ARCHITECTURE.md                   # Layer-by-layer architectural specification
+└── tests/
+    ├── test_cli_and_mcp.py               # CLI & JSON-RPC 2.0 MCP server tests
+    ├── test_forker.py                    # Counterfactual forking & TrajectoryDiff tests
+    ├── test_recorder.py                  # SHA-256 chain, JSONL & SQLite persistence tests
+    ├── test_replayer.py                  # Offline replay, drift detection & time-travel tests
+    └── test_serve_and_tools.py           # Telemetry, health monitor, doctor & bench matrix tests
+```
 
 ---
 
