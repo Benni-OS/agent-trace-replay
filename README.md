@@ -187,6 +187,27 @@ agent-trace-replay/
 
 ---
 
-## 📄 License
+## 🏛️ Commercial & Sovereign Architecture
 
-MIT License — see [LICENSE](LICENSE) for details.
+Need autonomous multi-agent swarm orchestration, private datacenter infrastructure, or enterprise governance?
+
+- **Official Website:** [https://benni-os.net](https://benni-os.net)
+- **Operator Mode Playbook:** [https://benni-os.net/blog/academy.html](https://benni-os.net/blog/academy.html)
+- **GitHub Organization:** [https://github.com/Benni-OS](https://github.com/Benni-OS)
+- **Maintainer:** [Benni Alencar](https://github.com/BenniAlencar)
+
+---
+
+## 📄 License & Provenance
+
+- **License:** [MIT License](LICENSE)
+- **Author:** Benni Alencar (`bennialencar@benni-os.net`)
+- **Architecture:** Benni Master OS v9.4 Tier-0 Governance Standard
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:7000FF,50:1a1a2e,100:0D0D0D&height=120&section=footer" width="100%"/>
+
+**agent-trace-replay** — *Zero-Cloud Time-Travel Debugger & Counterfactual Replay for AI Agents* • [benni-os.net](https://benni-os.net) • `MIT License`
+
+</div>
