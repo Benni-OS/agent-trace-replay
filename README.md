@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0D0D0D,50:1a1a2e,100:00B4D8&height=200&section=header&text=agent-trace-replay&fontSize=52&fontColor=ffffff&fontAlignY=38&desc=Zero-Cloud%20Time-Travel%20Debugger%2C%20Deterministic%20Trajectory%20Replay%20%26%20Counterfactual%20Forking&descAlignY=58&descSize=15&animation=fadeIn" width="100%"/>
+<img src="assets/banner_header.png" width="100%"/>
 
 <br/>
 
@@ -206,7 +206,7 @@ Need autonomous multi-agent swarm orchestration, private datacenter infrastructu
 
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:7000FF,50:1a1a2e,100:0D0D0D&height=120&section=footer" width="100%"/>
+<img src="assets/banner_footer.png" width="100%"/>
 
 **agent-trace-replay** — *Zero-Cloud Time-Travel Debugger & Counterfactual Replay for AI Agents* • [benni-os.net](https://benni-os.net) • `MIT License`
 
